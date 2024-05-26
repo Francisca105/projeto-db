@@ -28,7 +28,7 @@ if __name__ == '__main__':
     moradas = [fake.unique.address().replace(",","").replace("\n",", ").replace("Av ","Avenida ").replace("R.","Rua").replace("Prof.","Professor").replace("S/N",str(random.randint(1, 232))) for _ in range(n)]
     
     with open('../tables/enfermeiro.csv','w') as csvfile:
-        headers = ['nif','nome','telefone','morada']
+        headers = ['nif','nome','telefone','morada', 'nome_clinica']
         writer = csv.DictWriter(csvfile,fieldnames=headers)
         
         writer.writeheader()
