@@ -4,7 +4,7 @@ import random
 
 def medico_clinica_dia(i, nifs, medico_nomes, headers):
     clinicas_restantes = len(medico_nomes[i])
-    dias = [_+1 for _ in range(7)]
+    dias = [_ for _ in range(7)]
     dias_restantes = 7
     nif_nome_dia = []
 
@@ -43,4 +43,4 @@ if __name__ == '__main__':
             valores_medico = medico_clinica_dia(_,nifs,medico_nomes,headers)  
             for valor in valores_medico:
                 writer.writerow(valor)
-        writer.writerow({headers[0]:'168387380',headers[1]:'JCS Brandoa',headers[2]:3})
+        writer.writerow({headers[0]:'168387380',headers[1]:'JCS Brandoa',headers[2]:2})

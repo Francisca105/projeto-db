@@ -12,3 +12,12 @@
 
 -- Populates the paciente table
 \copy paciente FROM '~/data/paciente.csv' DELIMITER ',' CSV HEADER
+
+-- Populates the consulta table
+\copy consulta(ssn,nif,nome,data,hora,codigo_sns) FROM '~/data/consulta.csv' DELIMITER ',' CSV HEADER
+
+-- Populates the receita table
+\copy receita FROM '~/data/receita.csv' DELIMITER ',' CSV HEADER
+
+-- Populates the observacao table
+\copy observacao FROM '~/data/observacao.csv' DELIMITER ',' CSV HEADER
