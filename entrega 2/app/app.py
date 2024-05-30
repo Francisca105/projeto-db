@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from logging.config import dictConfig
 from psycopg.rows import namedtuple_row
 from psycopg_pool import ConnectionPool
@@ -9,6 +9,11 @@ from flask import Flask, jsonify, request
 
 load_dotenv()
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@postgres/postgres")
+
+times = [
+    "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", 
+    "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30"
+]
 
 dictConfig(
     {
@@ -59,6 +64,12 @@ def verifica_horario(data):
     minuto = data.minute
 
     return (hora >= 8 and hora <= 12) or (hora >= 14 and hora <= 18) and (minuto == 0 or minuto == 30)
+
+def dia_semana(data):
+    """
+    Retorna o dia da semana em formato numérico.
+    """
+    return (data.weekday()+1)%7
 
 pool = ConnectionPool(
     conninfo=DATABASE_URL,
@@ -148,7 +159,50 @@ def clinica_medicos(clinica, especialidade):
                 ).fetchall()  
                 log.debug(f"Encontrados {cur.rowcount} medicos da clinica {clinica} com especialidade {especialidade}.") 
 
-                return jsonify(medicos)
+                todos_medicos = []
+
+                for medico in medicos:
+                    log.debug(f"Medico: {medico}")
+                    este_medico = {
+                        "nif": medico[1],
+                        "nome": medico[0],
+                        "horarios": []
+                    }
+                    dia = datetime.now().date()
+                    
+                    dias = cur.execute(
+                        """
+                        SELECT dia_da_semana
+                        FROM trabalha
+                        WHERE nif = %(nif)s AND nome = %(clinica)s;
+                        """,
+                        {"nif": medico.nif, "clinica": clinica},
+                    ).fetchall()
+
+                    log.debug(f"Dias de trabalho: {dias}")
+
+                    while len(este_medico["horarios"]) < 3:
+                        if dia_semana(dia) in [dia[0] for dia in dias]:
+                            horarios = cur.execute(
+                                """
+                                SELECT hora
+                                FROM consulta
+                                WHERE nif = %(nif)s AND data = %(dia)s;
+                                """,
+                                {"nif": medico.nif, "dia": dia},
+                            ).fetchall()
+
+                            for hora in times:
+                                if hora not in horarios:
+                                    este_medico["horarios"].append({"dia": dia.strftime("%Y-%m-%d"), "hora": hora})
+
+                                    if len(este_medico["horarios"]) == 3:
+                                        break
+
+                        dia += timedelta(days=1)
+                    todos_medicos.append(este_medico)
+
+                return jsonify(todos_medicos)
             except Exception as e:
                 return jsonify({"erro": str(e)}), 400
 
@@ -185,7 +239,7 @@ def marcar_consulta(clinica):
     if not verifica_horario(date_hora):
         return jsonify({"erro": "Horário fora do expediente"}), 400
 
-    weekday = (date_hora.weekday()+1)%7
+    weekday = dia_semana(date_hora)
 
     with pool.connection() as conn:
         with conn.cursor() as cur:
