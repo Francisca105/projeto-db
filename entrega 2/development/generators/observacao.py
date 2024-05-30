@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
         i = 1
         for consulta in consultas:
-            if date.fromisoformat(consulta['data']) < date(2024,6,3):
+            if date.fromisoformat(consulta['data']) < date(2024,6,1):
                 sintomas_temp = [_ for _ in sintomas]
                 for _ in range(1,random.randint(1,5)+1):
                     writer.writerow({headers[0]:i,headers[1]:sintomas_temp.pop(random.randint(0,len(sintomas_temp)-1)),headers[2]:''})

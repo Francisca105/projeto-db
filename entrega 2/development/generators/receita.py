@@ -25,7 +25,7 @@ if __name__ == '__main__':
         writer.writeheader()
         
         for consulta in consultas:
-            if date.fromisoformat(consulta['data']) < date(2024,6,3) and random.random() <= 0.8:
+            if consulta['codigo_sns'] != '':
                 medicamentos_temp = [_ for _ in medicamentos]
                 for _ in range(1,random.randint(1,6)+1):
                     writer.writerow({headers[0]:consulta['codigo_sns'],headers[1]:medicamentos_temp.pop(random.randint(0,len(medicamentos_temp)-1)),headers[2]:random.randint(1,3)})

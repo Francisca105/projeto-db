@@ -56,23 +56,43 @@ if __name__ == '__main__':
                         paciente = random.choice(pacientes)
                     pacientes_dia.add(paciente)
 
-                    writer.writerow({headers[0]:paciente,headers[1]:medico,headers[2]:clinica,headers[3]:dia,headers[4]:horas_temp[medico].pop(random.randint(0,len(horas_temp)-1)),headers[5]:fake.unique.numerify(text='############')})
-                    
+                    if dia < datetime.date(2024,6,1):
+                        if random.random() <= 0.8:
+                            writer.writerow({headers[0]:paciente,headers[1]:medico,headers[2]:clinica,headers[3]:dia,headers[4]:horas_temp[medico].pop(random.randint(0,len(horas_temp)-1)),headers[5]:fake.unique.numerify(text='############')})
+                        else:
+                            writer.writerow({headers[0]:paciente,headers[1]:medico,headers[2]:clinica,headers[3]:dia,headers[4]:horas_temp[medico].pop(random.randint(0,len(horas_temp)-1)),headers[5]:''})
+                    else:
+                        writer.writerow({headers[0]:paciente,headers[1]:medico,headers[2]:clinica,headers[3]:dia,headers[4]:horas_temp[medico].pop(random.randint(0,len(horas_temp)-1)),headers[5]:''})
+
                     paciente = random.choice(pacientes)
                     while paciente in pacientes_dia:
                         paciente = random.choice(pacientes)
                     pacientes_dia.add(paciente)
                     
-                    writer.writerow({headers[0]:paciente,headers[1]:medico,headers[2]:clinica,headers[3]:dia,headers[4]:horas_temp[medico].pop(random.randint(0,len(horas_temp)-1)),headers[5]:fake.unique.numerify(text='############')})
+                    if dia < datetime.date(2024,6,1):
+                        if random.random() <= 0.8:
+                            writer.writerow({headers[0]:paciente,headers[1]:medico,headers[2]:clinica,headers[3]:dia,headers[4]:horas_temp[medico].pop(random.randint(0,len(horas_temp)-1)),headers[5]:fake.unique.numerify(text='############')})
+                        else:
+                            writer.writerow({headers[0]:paciente,headers[1]:medico,headers[2]:clinica,headers[3]:dia,headers[4]:horas_temp[medico].pop(random.randint(0,len(horas_temp)-1)),headers[5]:''})
+                    else:
+                        writer.writerow({headers[0]:paciente,headers[1]:medico,headers[2]:clinica,headers[3]:dia,headers[4]:horas_temp[medico].pop(random.randint(0,len(horas_temp)-1)),headers[5]:''})
+                    
                     consultas += 2
                 while consultas < 20:
                     medico = random.choice(clinicas_medicos[clinica][dia_semana])
                     
                     paciente = random.choice(pacientes)
                     while paciente in pacientes_dia:
-                        paciente = random.choice(pacientes)
-                    
+                        paciente = random.choice(pacientes)                    
                     pacientes_dia.add(paciente)
-                    writer.writerow({headers[0]:paciente,headers[1]:medico,headers[2]:clinica,headers[3]:dia,headers[4]:horas_temp[medico].pop(random.randint(0,len(horas_temp)-1)),headers[5]:fake.unique.numerify(text='############')})
+
+                    if dia < datetime.date(2024,6,1):
+                        if random.random() <= 0.8:
+                            writer.writerow({headers[0]:paciente,headers[1]:medico,headers[2]:clinica,headers[3]:dia,headers[4]:horas_temp[medico].pop(random.randint(0,len(horas_temp)-1)),headers[5]:fake.unique.numerify(text='############')})
+                        else:
+                            writer.writerow({headers[0]:paciente,headers[1]:medico,headers[2]:clinica,headers[3]:dia,headers[4]:horas_temp[medico].pop(random.randint(0,len(horas_temp)-1)),headers[5]:''})
+                    else:
+                        writer.writerow({headers[0]:paciente,headers[1]:medico,headers[2]:clinica,headers[3]:dia,headers[4]:horas_temp[medico].pop(random.randint(0,len(horas_temp)-1)),headers[5]:''})
+                    
                     consultas += 1
             dia += datetime.timedelta(1)
