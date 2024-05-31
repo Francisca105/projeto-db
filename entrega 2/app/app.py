@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from zoneinfo import ZoneInfo
 
+TZ = 'Etc/GMT-1'
+
 load_dotenv()
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@postgres/postgres")
 
@@ -42,16 +44,27 @@ def verifica_data(dia, hora):
     try:
         dia = datetime.strptime(dia, "%Y-%m-%d").date()
         hora = datetime.strptime(hora, "%H:%M").time()
-
-        return datetime.combine(dia, hora)
+        
+        dt_naive = datetime.combine(dia, hora)
+        
+        dt_with_tz = dt_naive.replace(tzinfo=ZoneInfo(TZ))
+        
+        return dt_with_tz
     except Exception as e:
         return False
+    
+def time_now():
+    """
+    Gera o tempo atual com a timezone definida.
+    """
+    return datetime.now(ZoneInfo(TZ))
     
 def eh_passado(data):
     """
     Verifica se a data passada é passada.
     """
-    now = datetime.now()
+    now = time_now()
+
     if data == now: # Não é passado nem futuro, para impedir
         return None # marcação/cancelamento de consultas para o momento atual.
     
@@ -180,7 +193,7 @@ def clinica_medicos(clinica, especialidade):
                 
                 cur.execute(
                     """
-                    SELECT medico.nome, medico.nif
+                    SELECT DISTINCT medico.nome, medico.nif
                     FROM medico
                     JOIN trabalha ON trabalha.nif = medico.nif
                     WHERE trabalha.nome = %(clinica)s AND medico.especialidade = %(especialidade)s;
@@ -201,7 +214,7 @@ def clinica_medicos(clinica, especialidade):
                         "nome": medico[0],
                         "horarios": []
                     }
-                    dia = datetime.now().date()
+                    dia = time_now().date()
                     
                     dias = cur.execute(
                         """
@@ -226,8 +239,11 @@ def clinica_medicos(clinica, especialidade):
                             ).fetchall()
 
                             for hora in times:
-                                if hora not in horarios:
-                                    este_medico["horarios"].append({"dia": dia.strftime("%Y-%m-%d"), "hora": hora})
+                                dia_str = dia.strftime("%Y-%m-%d")
+                                data_hora = verifica_data(dia_str, hora)
+
+                                if hora not in horarios and data_hora and not eh_passado(data_hora):
+                                    este_medico["horarios"].append({"dia": dia_str, "hora": hora})
 
                                     if len(este_medico["horarios"]) == 3:
                                         break
