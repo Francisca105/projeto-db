@@ -74,7 +74,7 @@ def dia_semana(data):
 pool = ConnectionPool(
     conninfo=DATABASE_URL,
     kwargs={
-        "autocommit": True,  # If True don’t start transactions automatically.
+        "autocommit": False, # Use transactions
         "row_factory": namedtuple_row,
     },
     min_size=4,
@@ -139,7 +139,7 @@ def clinica_especialidades(clinica):
             except Exception as e:
                 return jsonify({"erro": str(e)}), 400
 
-@app.route('/c/<clinica>/<especialidade>/', methods=['GET'])
+@app.route('/c/<clinica>/<especialidade>', methods=['GET'])
 def clinica_medicos(clinica, especialidade):
     """
     Retorna a lista de médicos de uma clínica com uma especialidade.
@@ -210,7 +210,7 @@ def clinica_medicos(clinica, especialidade):
 # Rotas POST
 #
 
-@app.route('/a/<clinica>/registar/', methods=['POST'])
+@app.route('/a/<clinica>/registar', methods=['POST'])
 def marcar_consulta(clinica):
     # ssn = request.args.get('paciente')
     # nif = request.args.get('medico')
@@ -243,30 +243,36 @@ def marcar_consulta(clinica):
 
     with pool.connection() as conn:
         with conn.cursor() as cur:
-            try:        
-                trabalha_dia = cur.execute(
+            try:     
+                conn.transaction()
+
+                cur.execute(
                     """
                     SELECT * FROM trabalha
                     WHERE nif = %(nif)s AND nome = %(clinica)s AND dia_da_semana = %(weekday)s;
                     """,
                     {"nif": nif, "clinica": clinica, "weekday": weekday},
-                ).fetchone()
+                )
+                
+                trabalha_dia = cur.fetchone()
 
                 if not trabalha_dia:
                     return jsonify({"erro": f"O médico não trabalha na clinica {clinica} neste dia"}), 400
                 
-                paciente_verifica = cur.execute(
+                cur.execute(
                     """
                     SELECT * FROM consulta
                     WHERE ssn = %(ssn)s AND data = %(date)s AND hora = %(hora)s;
                     """,
                     {"ssn": ssn, "date": date, "hora": hora},
-                ).fetchone()
+                )
+                
+                paciente_verifica = cur.fetchone()
 
                 if paciente_verifica:
                     return jsonify({"erro": "O paciente já tem uma consulta marcada para este dia e hora"}), 400
                 
-                medico_verifica = cur.execute(
+                cur.execute(
                     """
                     SELECT * FROM consulta
                     WHERE nif = %(nif)s AND data = %(date)s AND hora = %(hora)s;
@@ -274,26 +280,28 @@ def marcar_consulta(clinica):
                     {"nif": nif, "date": date, "hora": hora},
                 ).fetchone()
 
+                medico_verifica = cur.fetchone()
+
                 if medico_verifica:
                     return jsonify({"erro": "O médico já tem uma consulta marcada para este dia e hora"}), 400
 
-
-                status = cur.execute(
+                cur.execute(
                     """
                     INSERT INTO consulta (nif, ssn, data, hora, nome)
                     VALUES (%(nif)s, %(ssn)s, %(date)s, %(hora)s, %(clinica)s);
                     """,
                     {"nif": nif, "ssn": ssn, "date": date, "hora": hora, "clinica": clinica},
-                ).fetchall()
+                )
 
-                log.debug(f"Consulta marcada: {status}")
+                log.debug(f"Consulta marcada")
 
+                conn.commit()
                 return jsonify({"success": True, "msg": "Consulta marcada com sucesso"})
             except Exception as e:
                 return jsonify({"success": False, "error": str(e)})
 
 
-@app.route('/a/<clinica>/cancelar/', methods=['POST', 'DELETE'])
+@app.route('/a/<clinica>/cancelar', methods=['POST', 'DELETE'])
 def cancelar_appointment(clinica):
     # ssn = request.args.get('paciente')
     # nif = request.args.get('medico')
@@ -324,6 +332,8 @@ def cancelar_appointment(clinica):
     with pool.connection() as conn:
         with conn.cursor() as cur:
             try:
+                conn.transaction()
+
                 sql_query = """
                     SELECT * FROM consulta
                     WHERE nif = %(nif)s AND ssn = %(ssn)s AND data = %(date)s AND hora = %(hora)s AND nome = %(nome)s;
@@ -343,6 +353,8 @@ def cancelar_appointment(clinica):
                     {"nif": nif, "ssn": ssn, "date": date, "hora": hora, "clinica": clinica},
                 )
                 log.debug(f"Consulta cancelada: {status}")
+
+                conn.commit()
                 return jsonify({"success": True, "msg": "Consulta cancelada com sucesso"})
             except Exception as e:
                 return jsonify({"success": False, "erro": str(e)})
