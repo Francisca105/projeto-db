@@ -42,15 +42,15 @@ def verifica_data(dia, hora):
     Verifica se o dia e hora passados são válidos.
     """
     try:
-        dia = datetime.strptime(dia, "%Y-%m-%d").date()
-        hora = datetime.strptime(hora, "%H:%M").time()
-        
-        dt_naive = datetime.combine(dia, hora)
-        
+        dia_ = datetime.strptime(dia, "%Y-%m-%d").date()
+        hora_ = datetime.strptime(hora, "%H:%M").time()
+
+        dt_naive = datetime.combine(dia_, hora_)
         dt_with_tz = dt_naive.replace(tzinfo=ZoneInfo(TZ))
         
         return dt_with_tz
     except Exception as e:
+        log.debug(e)
         return False
     
 def time_now():
@@ -261,17 +261,11 @@ def clinica_medicos(clinica, especialidade):
 
 @app.route('/a/<clinica>/registar', methods=['POST'])
 def marcar_consulta(clinica):
-    # ssn = request.args.get('paciente')
-    # nif = request.args.get('medico')
-    # date = request.args.get('data')
-    # hora = request.args.get('hora')
+    ssn = request.args.get('paciente')
+    nif = request.args.get('medico')
+    date = request.args.get('data')
+    hora = request.args.get('hora')
 
-    data = request.json
-    ssn = str(data['paciente'])
-    nif = str(data['medico'])
-    date = str(data['data'])
-    hora = str(data['hora'])
-    
     log.debug(f"Recebido: paciente={ssn}, medico={nif}, data={date}, hora={hora}")
     
     if not all([ssn, nif, date, hora]):
@@ -394,16 +388,12 @@ def marcar_consulta(clinica):
 
 @app.route('/a/<clinica>/cancelar', methods=['POST', 'DELETE'])
 def cancelar_appointment(clinica):
-    # ssn = request.args.get('paciente')
-    # nif = request.args.get('medico')
-    # date = request.args.get('data')
-    # hora = request.args.get('hora')
-    
-    data = request.json
-    ssn = str(data['paciente'])
-    nif = str(data['medico'])
-    date = str(data['data'])
-    hora = str(data['hora'])
+    ssn = request.args.get('paciente')
+    nif = request.args.get('medico')
+    date = request.args.get('data')
+    hora = request.args.get('hora')
+
+    log.debug(f"{ssn} {nif} {date} {hora}")
 
     if not all([ssn, nif, date, hora]):
         return jsonify({"erro": "Faltam parâmetros obrigatórios"}), 400
@@ -473,6 +463,9 @@ def cancelar_appointment(clinica):
                 """
                 cur.execute(sql_query, {"nif": nif, "ssn": ssn, "date": date, "hora": hora, "nome": clinica})
                 consulta = cur.fetchone()
+
+                log.debug(f"{nif} {ssn} {date} {hora} {clinica}")
+                
 
                 if not consulta:
                     return jsonify({"erro": "Consulta não encontrada"}), 404
