@@ -6,6 +6,7 @@ from psycopg.rows import namedtuple_row
 from psycopg_pool import ConnectionPool
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
+from zoneinfo import ZoneInfo
 
 load_dotenv()
 DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@postgres/postgres")
@@ -107,7 +108,7 @@ def clinicas():
                     """,
                     {},
                 ).fetchall()
-                log.debug(f"Encontradas {cur.rowcount} clinicas.")
+                log.debug(f"Encontradas {cur.rowcount} clinicas")
 
                 return jsonify(clinicas)
             except Exception as e:
@@ -122,7 +123,20 @@ def clinica_especialidades(clinica):
     with pool.connection() as conn:
         with conn.cursor() as cur:
             try:
-                especialidades = cur.execute(
+                cur.execute(
+                    """
+                    SELECT * FROM clinica
+                    WHERE nome = %(clinica)s;
+                    """,
+                    {"clinica": clinica},
+                )
+
+                clinica_ = cur.fetchone()
+
+                if not clinica_:
+                    return jsonify({"erro": f"Clínica {clinica} não encontrada"}), 404
+
+                cur.execute(
                     """
                     SELECT DISTINCT medico.especialidade
                     FROM medico
@@ -130,10 +144,12 @@ def clinica_especialidades(clinica):
                     WHERE trabalha.nome = %(clinica)s;
                     """,
                     {"clinica": clinica},
-                ).fetchall()
-                log.debug(f"Encontradas {cur.rowcount} especialidades da clinica {clinica}.")
+                )
 
+                especialidades = cur.fetchall()
                 especialidades_flat = [especialidade[0] for especialidade in especialidades]
+                
+                log.debug(f"Encontradas {cur.rowcount} especialidades na clinica {clinica}")
                 return jsonify(especialidades_flat)
         
             except Exception as e:
@@ -148,7 +164,21 @@ def clinica_medicos(clinica, especialidade):
     with pool.connection() as conn:
         with conn.cursor() as cur:
             try:
-                medicos = cur.execute(
+
+                cur.execute(
+                    """
+                    SELECT * FROM clinica
+                    WHERE nome = %(clinica)s;
+                    """,
+                    {"clinica": clinica},
+                )
+
+                clinica_ = cur.fetchone()
+
+                if not clinica_:
+                    return jsonify({"erro": "Clínica não encontrada"}), 404
+                
+                cur.execute(
                     """
                     SELECT medico.nome, medico.nif
                     FROM medico
@@ -156,8 +186,11 @@ def clinica_medicos(clinica, especialidade):
                     WHERE trabalha.nome = %(clinica)s AND medico.especialidade = %(especialidade)s;
                     """,
                     {"clinica": clinica, "especialidade": especialidade},
-                ).fetchall()  
-                log.debug(f"Encontrados {cur.rowcount} medicos da clinica {clinica} com especialidade {especialidade}.") 
+                )
+                
+                medicos = cur.fetchall()
+
+                log.debug(f"Encontrados {cur.rowcount} medicos da clinica {clinica} com especialidade {especialidade}") 
 
                 todos_medicos = []
 
@@ -248,6 +281,48 @@ def marcar_consulta(clinica):
 
                 cur.execute(
                     """
+                    SELECT nif FROM paciente
+                    WHERE ssn = %(ssn)s;
+                    """,
+                    {"ssn": ssn},
+                )
+
+                paciente = cur.fetchone()
+
+                if not paciente:
+                    return jsonify({"erro": "Paciente não encontrado"}), 404
+                
+                cur.execute(
+                    """
+                    SELECT * FROM medico
+                    WHERE nif = %(nif)s;
+                    """,
+                    {"nif": nif},
+                )
+
+                medico = cur.fetchone()
+
+                if not medico:
+                    return jsonify({"erro": "Médico não encontrado"}), 404
+                
+                if paciente[0] == nif:
+                    return jsonify({"erro": "Paciente e médico não podem ser a mesma pessoa"}), 400
+
+                cur.execute(
+                    """
+                    SELECT * FROM clinica
+                    WHERE nome = %(clinica)s;
+                    """,
+                    {"clinica": clinica},
+                )
+
+                clinica_ = cur.fetchone()
+
+                if not clinica_:
+                    return jsonify({"erro": "Clínica não encontrada"}), 404
+
+                cur.execute(
+                    """
                     SELECT * FROM trabalha
                     WHERE nif = %(nif)s AND nome = %(clinica)s AND dia_da_semana = %(weekday)s;
                     """,
@@ -333,6 +408,48 @@ def cancelar_appointment(clinica):
         with conn.cursor() as cur:
             try:
                 conn.transaction()
+
+                cur.execute(
+                    """
+                    SELECT nif FROM paciente
+                    WHERE ssn = %(ssn)s;
+                    """,
+                    {"ssn": ssn},
+                )
+
+                paciente = cur.fetchone()
+
+                if not paciente:
+                    return jsonify({"erro": "Paciente não encontrado"}), 404
+                
+                cur.execute(
+                    """
+                    SELECT * FROM medico
+                    WHERE nif = %(nif)s;
+                    """,
+                    {"nif": nif},
+                )
+
+                medico = cur.fetchone()
+
+                if not medico:
+                    return jsonify({"erro": "Médico não encontrado"}), 404
+                
+                if paciente[0] == nif:
+                    return jsonify({"erro": "Paciente e médico não podem ser a mesma pessoa"}), 400
+                
+                cur.execute(
+                    """
+                    SELECT * FROM clinica
+                    WHERE nome = %(clinica)s;
+                    """,
+                    {"clinica": clinica},
+                )
+
+                clinica_ = cur.fetchone()
+
+                if not clinica_:
+                    return jsonify({"erro": "Clínica não encontrada"}), 404
 
                 sql_query = """
                     SELECT * FROM consulta
