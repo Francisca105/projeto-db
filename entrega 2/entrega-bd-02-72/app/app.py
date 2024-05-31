@@ -127,7 +127,7 @@ def clinicas():
             except Exception as e:
                 return jsonify({"erro": str(e)}), 400
 
-@app.route('/c/<clinica>', methods=['GET'])
+@app.route('/c/<clinica>/', methods=['GET'])
 def clinica_especialidades(clinica):
     """
     Retorna a lista de especialidades de uma clínica.
@@ -168,7 +168,7 @@ def clinica_especialidades(clinica):
             except Exception as e:
                 return jsonify({"erro": str(e)}), 400
 
-@app.route('/c/<clinica>/<especialidade>', methods=['GET'])
+@app.route('/c/<clinica>/<especialidade>/', methods=['GET'])
 def clinica_medicos(clinica, especialidade):
     """
     Retorna a lista de médicos de uma clínica com uma especialidade.
@@ -259,7 +259,7 @@ def clinica_medicos(clinica, especialidade):
 # Rotas POST
 #
 
-@app.route('/a/<clinica>/registar', methods=['POST'])
+@app.route('/a/<clinica>/registar/', methods=['POST'])
 def marcar_consulta(clinica):
     """
     Marca uma consulta.
@@ -390,7 +390,7 @@ def marcar_consulta(clinica):
                 return jsonify({"success": False, "error": str(e)})
 
 
-@app.route('/a/<clinica>/cancelar', methods=['POST', 'DELETE'])
+@app.route('/a/<clinica>/cancelar/', methods=['POST', 'DELETE'])
 def cancelar_consulta(clinica):
     ssn = request.args.get('paciente')
     nif = request.args.get('medico')
