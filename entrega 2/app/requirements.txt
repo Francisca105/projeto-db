@@ -1,9 +1,0 @@
-Flask==2.3.*
-python-dotenv==1.0.1
-psycopg[binary,pool]==3.1.*
-datetime==5.5
-cython>=0.29.24
-gunicorn==22.0.0
-packaging==23
-Werkzeug[watchdog]>=3.0.1
-wheel
